@@ -15,7 +15,7 @@ html, body
     overflow: hidden;
     font-family: 'OstrichFont' !important; 
     color: white;
-    font-size: 12px;
+    font-size: 100%;
 }
 
 #webgl

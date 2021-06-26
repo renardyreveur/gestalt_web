@@ -24,7 +24,7 @@ if ( document.readyState === "complete" || (document.readyState !== "loading" &&
   preload ();
 else
   document.addEventListener("DOMContentLoaded", preload ); 
-
+document.body.onselectstart = function() { return false; } 
 
 // Environment class - basic three.js setup [scene, camera, renderer, etc.]
 class Environment {
@@ -46,18 +46,21 @@ class Environment {
 	}
 
 	bindEvents(){
+		// Window Resize
 		window.addEventListener( 'resize', this.onWindowResize.bind( this ) ); 
 	}
 
 	onWindowResize(){
 		// Update renderer size on window resize
 		this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+		this.camera.fov = (this.camera.aspect < 1.0) ?  2 * Math.atan( ( 100 / this.camera.aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.1 : 65;
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize( this.container.clientWidth, this.container.clientHeight );
 	
 	}
 
 	setup(){ 
+		// Main particles effect rendering setup
 		console.log("SETUP!")
 		this.createParticles = new CreateParticles( this.scene, this.font, this.particles, this.camera, this.renderer );
 	}
@@ -70,7 +73,9 @@ class Environment {
 	
 	createCamera() {
 		// Perspective Camera
-		this.camera = new THREE.PerspectiveCamera( 65, this.container.clientWidth /  this.container.clientHeight, 0.1, 100 );
+		let aspect = this.container.clientWidth /  this.container.clientHeight
+		let fov = (aspect < 1.0) ? 2 * Math.atan( ( 100 / aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.1 : 65;
+		this.camera = new THREE.PerspectiveCamera( fov, aspect, 1, 500 );
 		this.camera.position.set( 0, 0, 100 );
 	
 	}
@@ -101,17 +106,18 @@ class CreateParticles {
 		
 		// Instantiate a Raycaster
 		this.raycaster = new THREE.Raycaster();
-		this.mouse = new THREE.Vector2(-200, 200);
+		this.mouse = new THREE.Vector2(1, 0);
 
 		this.colorChange = new THREE.Color();
 
+		// Text Rendering data
 		this.data = {
 			text: 'GESTALT\nPOOL',
-			amount: 1500,
-			particleSize: 1,
+			amount: 200,
+			particleSize: 5,
 			particleColor: 0xffffff,
 			textSize: 24,
-			area: 250,
+			area: 10,
 			ease: .05,
 		}
 
@@ -132,23 +138,38 @@ class CreateParticles {
 
 	bindEvents() {
 		// Mouse event listeners
-		document.addEventListener( 'mousedown', this.onMouseDown.bind( this ));
-		document.addEventListener( 'mousemove', this.onMouseMove.bind( this ));
-		document.addEventListener( 'mouseup', this.onMouseUp.bind( this ));
+		// document.addEventListener( 'dbclick', this.onMouseDBClick.bind( this ));
+		document.addEventListener( 'mousemove', this.onMouseMove.bind( this ) );
+		document.addEventListener( 'deviceorientation' , this.onDeviceOrientation.bind(this) );
+		// document.addEventListener( 'touchmove', this.onMouseMove.bind( this ));
+		document.addEventListener( 'mouseup', this.onMouseUp.bind( this ) );
 	}
 
-	onMouseDown(){
-		
-		this.mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-		this.mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+	onDeviceOrientation(){
+		let x = event.beta;
+		let y = event.gamma;
+		// if (x >  90) { x =  90};
+  		// if (x < -90) { x = -90};
+		// x /= 180;
+		// y /= 180;
 
-		const vector = new THREE.Vector3( this.mouse.x, this.mouse.y, 0.5);
-		vector.unproject( this.camera );
-		const dir = vector.sub( this.camera.position ).normalize();
-		const distance = - this.camera.position.z / dir.z;
-		this.currenPosition = this.camera.position.clone().add( dir.multiplyScalar( distance ) );
+		// this.mouse.x = x;
+		// this.mouse.y = y;
+		console.log(x, y)
+	}
+
+	onMouseDBClick(){
 		
-		const pos = this.particles.geometry.attributes.position;
+		// this.mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+		// this.mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+		// const vector = new THREE.Vector3( this.mouse.x, this.mouse.y, 0.5);
+		// vector.unproject( this.camera );
+		// const dir = vector.sub( this.camera.position ).normalize();
+		// const distance = - this.camera.position.z / dir.z;
+		// this.currenPosition = this.camera.position.clone().add( dir.multiplyScalar( distance ) );
+		
+		// const pos = this.particles.geometry.attributes.position;
 		this.buttom = true;
 		this.data.ease = .01;
 		
@@ -168,18 +189,21 @@ class CreateParticles {
 	}
 
 	render( level ){ 
-
+		// Relative Timing
 		const time = ((.001 * performance.now())%12)/12;
 		const zigzagTime = (1 + (Math.sin( time * 2 * Math.PI )))/6;
 
+		// Picking ray(what objects in 3d the mouse is over) update with mouse and camera
 		this.raycaster.setFromCamera( this.mouse, this.camera );
 
+		// Calculate objects intersecting picking ray
 		const intersects = this.raycaster.intersectObject( this.planeArea );
 
+		// If objects intersect with the mouse picking ray
 		if ( intersects.length > 0 ) {
 
 			const pos = this.particles.geometry.attributes.position;
-			const copy = this.geometryCopy.attributes.position;
+			const copy = this.geometryCopy.attributes.position; // original position
 			const coulors = this.particles.geometry.attributes.customColor;
 			const size = this.particles.geometry.attributes.size;
 
@@ -283,21 +307,30 @@ class CreateParticles {
 
 		    }
 		}
+
+		this.camera.position.x = Math.sin(this.mouse.x * Math.PI * 0.1) * 50
+		this.camera.position.z = Math.cos(this.mouse.x * Math.PI * 0.1) * 100
+		this.camera.position.y = this.mouse.y * 20
+		this.camera.lookAt(0, 0, 0)
 	}
 
 	createText(){ 
+		//From setup()
+		// Hold the Vector3D position of the points of the text shape exterior
 		let thePoints = [];
 
+		// Get 2D plane shape geometry with rendered font
 		let shapes = this.font.generateShapes( this.data.text , this.data.textSize  );
 		let geometry = new THREE.ShapeGeometry( shapes );
 		geometry.computeBoundingBox();
 	
+		// Get mid point of text bounding box
 		const xMid = - 0.5 * ( geometry.boundingBox.max.x - geometry.boundingBox.min.x );
 		const yMid =  (geometry.boundingBox.max.y - geometry.boundingBox.min.y)/2.85;
 
 		geometry.center();
 
-		// Get holes from shape with holes
+		// Get the exterior path of the text shapes -> We're going to render the path with particles
 		let holeShapes = [];
 		for ( let q = 0; q < shapes.length; q ++ ) {
 			let shape = shapes[ q ];
@@ -312,42 +345,62 @@ class CreateParticles {
 
 		let colors = [];
 		let sizes = [];
+
+		// For each shape in shapes
 		for ( let x = 0; x < shapes.length; x ++ ) {
 			let shape = shapes[ x ];
+			// If shape is path then use half of the number of particles, else use full
 			const amountPoints = ( shape.type == 'Path') ? this.data.amount/2 : this.data.amount;
+			
+			// Points to render particles at -> Equally spaced $amountPoints number of points around the text exterior
 			let points = shape.getSpacedPoints( amountPoints ) ;
 			points.forEach( ( element, z ) => {						
 				const a = new THREE.Vector3( element.x, element.y, 0 );
 				thePoints.push( a );
+				// colour change defined in the render function
 				colors.push( this.colorChange.r, this.colorChange.g, this.colorChange.b);
 				sizes.push( 1 )
 				});
 		}
 
-		let geoParticles = new THREE.BufferGeometry().setFromPoints( thePoints );
+		// Create a buffergeometry as we can mutalize all points, they're the same
+		let geoParticles = new THREE.BufferGeometry().setFromPoints( shuffle(thePoints) );
+		
+		// translate to the text mid-points
 		geoParticles.translate( xMid, yMid, 0 );
-				
 		geoParticles.setAttribute( 'customColor', new THREE.Float32BufferAttribute( colors, 3 ) );
 		geoParticles.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1) );
-
 		
-		// const material = new THREE.MeshBasicMaterial();
-		const material = new THREE.ShaderMaterial( {
-			uniforms: {
-				color: { value: new THREE.Color( 0xffffff ) },
-				pointTexture: { value: this.particleImgs[0] }
-			},
-			vertexShader: vertexShader(),
-			fragmentShader: fragmentShader(),
-
-			blending: THREE.AdditiveBlending,
-			depthTest: false,
-			transparent: true,
-		} );
-
-		this.particles = new THREE.Points( geoParticles, material );
+		// To Render with three different materials
+		geoParticles.addGroup(0, Math.floor(thePoints.length/3), 0)
+		geoParticles.addGroup(Math.floor(thePoints.length/3), Math.floor(thePoints.length/3), 1)
+		geoParticles.addGroup(Math.floor(thePoints.length/3)*2, thePoints.length - Math.floor(thePoints.length/3)*2, 2)
+		
+		// Define custom material to render the particles with GLSL		
+		const materials = [];
+		for (let i = 0; i < 3; i++){
+			materials.push(
+				new THREE.ShaderMaterial( {
+					uniforms: {
+						color: { value: new THREE.Color( 0xffffff ) },
+						pointTexture: { value: this.particleImgs[i] }
+					},
+					vertexShader: vertexShader(),
+					fragmentShader: fragmentShader(),
+		
+					blending: THREE.AdditiveBlending,
+					depthTest: false,
+					transparent: true,
+				} )
+			);
+		}
+		
+		// Create Particle Meshes and add to Scene
+		this.particles = new THREE.Points( geoParticles, materials );
 		this.scene.add( this.particles );
 
+
+		// Create a separate copy
 		this.geometryCopy = new THREE.BufferGeometry();
 		this.geometryCopy.copy( this.particles.geometry );
 		
@@ -407,3 +460,36 @@ function fragmentShader() {
 		}
 	`
 }
+
+function getRandom(arr, n) {
+    var result = new Array(n),
+        len = arr.length,
+        taken = new Array(len);
+    if (n > len)
+        throw new RangeError("getRandom: more elements taken than available");
+    while (n--) {
+        var x = Math.floor(Math.random() * len);
+        result[n] = arr[x in taken ? taken[x] : x];
+        taken[x] = --len in taken ? taken[len] : len;
+    }
+    return result;
+}
+
+
+function shuffle(array) {
+	var currentIndex = array.length,  randomIndex;
+  
+	// While there remain elements to shuffle...
+	while (0 !== currentIndex) {
+  
+	  // Pick a remaining element...
+	  randomIndex = Math.floor(Math.random() * currentIndex);
+	  currentIndex--;
+  
+	  // And swap it with the current element.
+	  [array[currentIndex], array[randomIndex]] = [
+		array[randomIndex], array[currentIndex]];
+	}
+  
+	return array;
+  }
