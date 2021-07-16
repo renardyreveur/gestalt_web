@@ -3,12 +3,13 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCSSExtractPlugin = require('mini-css-extract-plugin')
 const path = require('path')
 
+
 module.exports = {
-    entry: './src/main.js',
-    mode: 'production',
+    entry: path.resolve(__dirname, './src/main.js'),
+    mode: "production",
     output: {
-        filename: "main.js",
-        path: path.resolve(__dirname, 'dist')
+        filename: "budle.[contenthash].js",
+        path: path.resolve(__dirname, './dist')
     },
     devtool: 'source-map',
     plugins:
@@ -19,7 +20,7 @@ module.exports = {
             ]
         }),
         new HtmlWebpackPlugin({
-            template: path.resolve(__dirname, './dist/main.html'),
+            template: path.resolve(__dirname, './src/main.html'),
             minify: true
         }),
         new MiniCSSExtractPlugin()
