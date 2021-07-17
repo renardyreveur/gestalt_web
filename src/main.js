@@ -4,7 +4,11 @@ import * as THREE from 'three'
 
 import { CreateParticles } from './particles.js'
 import { CreateOutlines }from './outline.js'
+import { CreateButtons } from './buttons.js'
 
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 
 // Preload script: this is the main function that runs
 const preload = () => {
@@ -37,16 +41,15 @@ document.body.onselectstart = function() { return false; }
 
 // Environment class - basic three.js setup [scene, camera, renderer, etc.]
 class Environment {
-	constructor( font, particles ){
+	constructor( font, particle_textures ){
 		this.font = font;
-		this.particles = particles;
+		this.particle_textures = particle_textures;
 
 		// Link to HTML Document
 		this.container = document.querySelector( '#webgl' );
 		
 		// Create three.js base objects
 		this.scene = new THREE.Scene();
-		this.outlineScene = new THREE.Scene();
 		this.createCamera();
 		this.createRenderer();
 		this.setup();
@@ -63,34 +66,37 @@ class Environment {
 	onWindowResize(){
 		// Update renderer size on window resize
 		this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
-		this.camera.fov = (this.camera.aspect < 1.0) ?  2 * Math.atan( ( 100 / this.camera.aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.1 : 65;
+		this.camera.fov = (this.camera.aspect < 1.0) ?  2 * Math.atan( ( 100 / this.camera.aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.2 : 65;
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize( this.container.clientWidth, this.container.clientHeight );
-	
+		this.composer.setSize( this.container.clientWidth, this.container.clientHeight );
+		this.bloomPass.setSize( this.container.clientWidth, this.container.clientHeight );
 	}
 
 	setup(){ 
 		// Main particles effect rendering setup
 		console.log("SETUP!")
-		this.createParticles = new CreateParticles( this.scene, this.font, this.particles, this.camera, this.renderer, this.container.clientWidth, this.container.clientHeight);
-		this.createOutlines = new CreateOutlines( this.outlineScene, this.renderer, this.camera, this.createParticles.hullGeometry )
+		this.createParticles = new CreateParticles( this.scene, this.font, this.particle_textures, this.camera, this.renderer);
+		this.createOutlines = new CreateOutlines( this.scene, this.bloomPass, this.createParticles.hullGeometry )
+		this.createButtons = new CreateButtons( this.scene, this.camera);
 	}
 	
 	render() {
+		// Particel Movement logic
 		this.createParticles.render()
+		this.createButtons.render()
+
+		// this.is.dayeon.hi()
 		
 		// Render the scene with the camera
-		// this.renderer.render( this.scene, this.camera )
-
-		// this.createOutlines.composer.addPass(new RenderPass( this.renderer, this.camera ))
-		this.createOutlines.composer.render()
+		this.composer.render()
 	}
 	
 
 	createCamera() {
 		// Perspective Camera
 		let aspect = this.container.clientWidth /  this.container.clientHeight
-		let fov = (aspect < 1.0) ? 2 * Math.atan( ( 100 / aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.1 : 65;
+		let fov = (aspect < 1.0) ? 2 * Math.atan( ( 100 / aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.2 : 65;
 		this.camera = new THREE.PerspectiveCamera( fov, aspect, 1, 500 );
 		this.camera.position.set( 0, 0, 100 );
 	
@@ -99,6 +105,7 @@ class Environment {
 	createRenderer() {
 		// Renderer
 		this.renderer = new THREE.WebGLRenderer();
+		this.renderer.toneMapping = THREE.ReinhardToneMapping;
 		this.renderer.setSize( this.container.clientWidth, this.container.clientHeight );
 
 		this.renderer.setPixelRatio( Math.min( window.devicePixelRatio, 2));
@@ -108,6 +115,13 @@ class Environment {
 
 		this.renderer.setAnimationLoop(() => { this.render() })
 
+
+		// Effect Composer
+		this.composer = new EffectComposer( this.renderer );//, renderTarget );
+		this.composer.addPass( new RenderPass( this.scene, this.camera ) );
+		// Unreal Bloom pass.
+		this.bloomPass = new UnrealBloomPass( new THREE.Vector2( this.container.clientWidth, this.container.clientHeight ), 1.5, 0.4, 0.85 );
+		this.composer.addPass(this.bloomPass);
 	}
 }
 

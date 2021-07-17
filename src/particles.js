@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import hull from './hull/hull.js'
 
 export class CreateParticles {
-	constructor ( scene, font, particleImgs, camera, renderer, cw, ch){
+	constructor ( scene, font, particleImgs, camera, renderer){
 		this.scene = scene;
 		this.font = font;
 		this.particleImgs = particleImgs;
@@ -15,6 +15,7 @@ export class CreateParticles {
 		this.mouse = new THREE.Vector2(1, 0);
 
 		this.colorChange = new THREE.Color();
+		// let initWidth = renderer.getSize(new THREE.Vector2()).x
 
 		// Text Rendering data
 		this.data = {
@@ -27,9 +28,6 @@ export class CreateParticles {
 			ease: .05,
 		}
 		
-		this.cw = cw;
-		this.ch = ch;
-
 		this.setup();
 		this.bindEvents();
 	}
@@ -47,68 +45,56 @@ export class CreateParticles {
 
 	bindEvents() {
 		// Mouse event listeners
-		// document.addEventListener( 'dbclick', this.onMouseDBClick.bind( this ));
+		document.addEventListener("touchstart", this.touch2mouse, true);
+		document.addEventListener("touchmove", this.touch2mouse, true);
+		document.addEventListener("touchend", this.touch2mouse, true);
+
+		// document.addEventListener("deviceorientation", this.deviceorientation, true);
+
 		document.addEventListener( 'mousemove', this.onMouseMove.bind( this ) );
-		// document.addEventListener( 'touchmove', this.onTouchMove.bind( this ), true);
-		// document.addEventListener( 'deviceorientation' , this.onDeviceOrientation.bind(this) );
-		// document.addEventListener( 'touchmove', this.onMouseMove.bind( this ));
-		// document.addEventListener( 'mouseup', this.onMouseUp.bind( this ) );
 	}
 
-	onDeviceOrientation(){
-		let x = event.beta;
-		let y = event.gamma;
-		// if (x >  90) { x =  90};
-  		// if (x < -90) { x = -90};
-		// x /= 180;
-		// y /= 180;
-
-		this.mouse.x = x;
-		this.mouse.y = y;
-		console.log(x, y)
-	}
-
-	onMouseDBClick(){
-		
-		// this.mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-		// this.mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-		// const vector = new THREE.Vector3( this.mouse.x, this.mouse.y, 0.5);
-		// vector.unproject( this.camera );
-		// const dir = vector.sub( this.camera.position ).normalize();
-		// const distance = - this.camera.position.z / dir.z;
-		// this.currenPosition = this.camera.position.clone().add( dir.multiplyScalar( distance ) );
-		
-		// const pos = this.particles.geometry.attributes.position;
-		this.buttom = true;
-		this.data.ease = .01;
-		
-	}
-
-	onMouseUp(){
-
-		this.buttom = false;
-		this.data.ease = .05;
-	}
-
-	onTouchMove(e){
+	touch2mouse(e){
+		console.log("AAA")
 		var theTouch = e.changedTouches[0];
-		mouseEvent.initMouseEvent('mousemove', true, true, window, 1, theTouch.screenX, theTouch.screenY, theTouch.clientX, theTouch.clientY, false, false, false, false, 0, null);
+		var mouseEv;
+
+		switch(e.type)
+		{
+			case "touchstart": mouseEv="mousedown"; break;  
+			case "touchend":   mouseEv="mouseup"; break;
+			case "touchmove":  mouseEv="mousemove"; break;
+			default: return;
+		}
+
+		var mouseEvent = document.createEvent("MouseEvent");
+		mouseEvent.initMouseEvent(mouseEv, true, true, window, 1, theTouch.screenX, theTouch.screenY, theTouch.clientX, theTouch.clientY, false, false, false, false, 0, null);
 		theTouch.target.dispatchEvent(mouseEvent);
-		e.preventDefault();	
+
+		e.preventDefault();
 	}
+
+	// deviceorientation(e){
+	// 	console.log("EHERE")
+	// 	var absolute = e.absolute;
+	// 	var alpha    = e.alpha;
+	// 	var x     = e.beta;
+	// 	var y    = e.gamma;
+
+	// 	if (x >  90) { x =  90};
+  	// 	if (x < -90) { x = -90};
+	// 	x += 90;
+  	// 	y += 90;
+	// 	x /=180;
+	// 	y /= 180;
+	// 	console.log(x, y)
+	// 	e.preventDefault();
+	// }
 
 	onMouseMove( event ) { 
 		let x, y;
-		if ( event.changedTouches ) {
-			console.log("AAAAA")
-			x = event.changedTouches[ 0 ].pageX;
-			y = event.changedTouches[ 0 ].pageY;
-
-		} else {
-			x = event.clientX;
-			y = event.clientY;
-		}
+		x = event.clientX;
+		y = event.clientY;
 
 		this.mouse.x = ( x / window.innerWidth ) * 2 - 1;
 		this.mouse.y = - ( y / window.innerHeight ) * 2 + 1;
@@ -130,7 +116,7 @@ export class CreateParticles {
 
 			const pos = this.particles.geometry.attributes.position;
 			const copy = this.geometryCopy.attributes.position; // original position
-			const coulors = this.particles.geometry.attributes.customColor;
+			const colors = this.particles.geometry.attributes.customColor;
 			const size = this.particles.geometry.attributes.size;
 
 		    const mx = intersects[ 0 ].point.x;
@@ -147,9 +133,9 @@ export class CreateParticles {
 		    	let py = pos.getY(i);
 		    	let pz = pos.getZ(i);
 
-		    	this.colorChange.setHSL( .5, 1 , 1 )
-		    	coulors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
-		    	coulors.needsUpdate = true;
+				this.colorChange.setHex(0xe76f51);
+		    	colors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
+		    	colors.needsUpdate = true;
 
 		    	size.array[ i ]  = this.data.particleSize;
 		    	size.needsUpdate = true;
@@ -169,14 +155,14 @@ export class CreateParticles {
 		    		py -= f * Math.sin( t );
 
 		    		this.colorChange.setHSL( .5 + zigzagTime, 1.0 , .5 )
-		    		coulors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
-		    		coulors.needsUpdate = true;
+		    		colors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
+		    		colors.needsUpdate = true;
 
 		    		if ((px > (initX + 70)) || ( px < (initX - 70)) || (py > (initY + 70) || ( py < (initY - 70)))){
 
 		    			this.colorChange.setHSL( .15, 1.0 , .5 )
-		    			coulors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
-		    			coulors.needsUpdate = true;
+		    			colors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
+		    			colors.needsUpdate = true;
 
 		    		}
 
@@ -191,8 +177,8 @@ export class CreateParticles {
 			    			py -= .03 * Math.sin( t );
 
 			    			this.colorChange.setHSL( .15 , 1.0 , .5 )
-			    			coulors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
-			    			coulors.needsUpdate = true;
+			    			colors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
+			    			colors.needsUpdate = true;
 
 							size.array[ i ]  =  this.data.particleSize /1.2;
 							size.needsUpdate = true;
@@ -213,8 +199,8 @@ export class CreateParticles {
 			    		if ((px > (initX + 10)) || ( px < (initX - 10)) || (py > (initY + 10) || ( py < (initY - 10)))){
 
 			    			this.colorChange.setHSL( .15, 1.0 , .5 )
-			    			coulors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
-			    			coulors.needsUpdate = true;
+			    			colors.setXYZ( i, this.colorChange.r, this.colorChange.g, this.colorChange.b )
+			    			colors.needsUpdate = true;
 
 			    			size.array[ i ]  = this.data.particleSize /1.8;
 			    			size.needsUpdate = true;
@@ -371,8 +357,6 @@ export class CreateParticles {
 	    return Math.sqrt(Math.pow((x1 - x2), 2) + Math.pow((y1 - y2), 2));
 	}
 }
-
-
 
 
 function vertexShader() {
