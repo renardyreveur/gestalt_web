@@ -3,12 +3,13 @@ import * as THREE from 'three'
 import hull from './hull/hull.js'
 
 export class CreateParticles {
-	constructor ( scene, font, particleImgs, camera, renderer){
+	constructor ( scene, font, particleImgs, camera, renderer, container){
 		this.scene = scene;
 		this.font = font;
 		this.particleImgs = particleImgs;
 		this.camera = camera;
 		this.renderer = renderer;
+		this.container = container;
 		
 		// Instantiate a Raycaster
 		this.raycaster = new THREE.Raycaster();
@@ -96,8 +97,8 @@ export class CreateParticles {
 		x = event.clientX;
 		y = event.clientY;
 
-		this.mouse.x = ( x / window.innerWidth ) * 2 - 1;
-		this.mouse.y = - ( y / window.innerHeight ) * 2 + 1;
+		this.mouse.x = ( x / this.container.clientWidth ) * 2 - 1;
+		this.mouse.y = - ( y / this.container.clientHeight ) * 2 + 1;
 	}
 
 	render( level ){

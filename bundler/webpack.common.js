@@ -3,25 +3,24 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCSSExtractPlugin = require('mini-css-extract-plugin')
 const path = require('path')
 
-
 module.exports = {
-    entry: path.resolve(__dirname, './src/main.js'),
-    mode: "production",
-    output: {
-        filename: "budle.[contenthash].js",
-        path: path.resolve(__dirname, './dist')
+    entry: path.resolve(__dirname, '../src/main.js'),
+    output:
+    {
+        filename: 'bundle.[contenthash].js',
+        path: path.resolve(__dirname, '../dist'),
     },
     devtool: 'source-map',
     plugins:
     [
         new CopyWebpackPlugin({
             patterns: [
-                { from: path.resolve(__dirname, './static') }
+                { from: path.resolve(__dirname, '../static') }
             ]
         }),
         new HtmlWebpackPlugin({
-            template: path.resolve(__dirname, './src/main.html'),
-            minify: true
+            template: path.resolve(__dirname, '../src/index.html'),
+            minify: true,
         }),
         new MiniCSSExtractPlugin()
     ],
@@ -58,16 +57,17 @@ module.exports = {
             // Images
             {
                 test: /\.(jpg|png|gif|svg)$/,
+                dependency: { not: ['url'] },
                 use:
                 [
                     {
                         loader: 'file-loader',
                         options:
                         {
-                            outputPath: 'assets/images/'
+                            outputPath: 'assets/images/',
                         }
                     }
-                ]
+                ],
             },
 
             // Fonts
@@ -83,7 +83,8 @@ module.exports = {
                         }
                     }
                 ]
-            }
+            },
+
         ]
     }
-};
+}

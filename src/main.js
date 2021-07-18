@@ -1,3 +1,5 @@
+//Dearest Diana
+
 import './style.css'
 
 import * as THREE from 'three'
@@ -9,6 +11,10 @@ import { CreateButtons } from './buttons.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
+
+import p1 from './assets/textures/p1.png'
+import p2 from './assets/textures/p2.png'
+import p3 from './assets/textures/p3.png'
 
 // Preload script: this is the main function that runs
 const preload = () => {
@@ -23,9 +29,9 @@ const preload = () => {
 	var font_obj = null;
 	const loader = new THREE.FontLoader( manager );
 	const font = loader.load("/fonts/Ostrich_Sans_Black.json", function ( font ) { font_obj = font; });
-	const pt1 = new THREE.TextureLoader( manager ).load( "/textures/p1.png" );
-	const pt2 = new THREE.TextureLoader( manager ).load( "/textures/p2.png" );
-	const pt3 = new THREE.TextureLoader( manager ).load( "/textures/p3.png" );
+	const pt1 = new THREE.TextureLoader( manager ).load( p1 );
+	const pt2 = new THREE.TextureLoader( manager ).load( p2 );
+	const pt3 = new THREE.TextureLoader( manager ).load( p3 );
 }
 
 // If the document and all the sub-resources have finished loading, run the preload function
@@ -66,7 +72,7 @@ class Environment {
 	onWindowResize(){
 		// Update renderer size on window resize
 		this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
-		this.camera.fov = (this.camera.aspect < 1.0) ?  2 * Math.atan( ( 100 / this.camera.aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.2 : 65;
+		this.camera.fov = (this.camera.aspect < 0.8) ? Math.max(2 * Math.atan( ( 100 / this.camera.aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.2, 85) : 85;
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize( this.container.clientWidth, this.container.clientHeight );
 		this.composer.setSize( this.container.clientWidth, this.container.clientHeight );
@@ -76,9 +82,9 @@ class Environment {
 	setup(){ 
 		// Main particles effect rendering setup
 		console.log("SETUP!")
-		this.createParticles = new CreateParticles( this.scene, this.font, this.particle_textures, this.camera, this.renderer);
+		this.createParticles = new CreateParticles( this.scene, this.font, this.particle_textures, this.camera, this.renderer, this.container);
 		this.createOutlines = new CreateOutlines( this.scene, this.bloomPass, this.createParticles.hullGeometry )
-		this.createButtons = new CreateButtons( this.scene, this.camera);
+		this.createButtons = new CreateButtons( this.scene, this.camera, this.font, this.container );
 	}
 	
 	render() {
@@ -96,7 +102,7 @@ class Environment {
 	createCamera() {
 		// Perspective Camera
 		let aspect = this.container.clientWidth /  this.container.clientHeight
-		let fov = (aspect < 1.0) ? 2 * Math.atan( ( 100 / aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.2 : 65;
+		let fov = (aspect < 0.8) ? Math.max(2 * Math.atan( ( 100 / aspect ) / ( 2 * 100 ) ) * ( 180 / Math.PI )*1.2, 85) : 85;
 		this.camera = new THREE.PerspectiveCamera( fov, aspect, 1, 500 );
 		this.camera.position.set( 0, 0, 100 );
 	
